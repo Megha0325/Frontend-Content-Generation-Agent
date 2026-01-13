@@ -1,0 +1,8 @@
+{
+  "name": "FlowForge: N8N Content Automator",
+  "description": "A high-end dashboard for orchestrating and managing content generation workflows. Seamlessly integrates with automation engines to produce high-quality articles, social media posts, and AI-generated imagery.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
