@@ -67,15 +67,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectAgent }) => {
             </div>
             
             <div className="flex-grow flex flex-col">
-              <h3 className="text-2xl font-bold text-slate-900 mb-4 group-hover:text-[#0a5cff] transition-colors">
-                {agent.title}
-              </h3>
-              <p className="text-slate-500 leading-relaxed mb-8 flex-grow">
-                {agent.description}
-              </p>
+              {/* Added a fixed min-height to the title container to align the descriptions below it */}
+              <div className="min-h-[4rem] flex items-center mb-4">
+                <h3 className="text-2xl font-bold text-slate-900 group-hover:text-[#0a5cff] transition-colors line-clamp-2">
+                  {agent.title}
+                </h3>
+              </div>
+              
+              {/* Ensure the description box takes up the remaining middle space */}
+              <div className="flex-grow">
+                <p className="text-slate-500 leading-relaxed mb-8">
+                  {agent.description}
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center text-[#0a5cff] font-bold mt-auto pt-4 border-t border-slate-50 flex-shrink-0">
+            {/* Footer remains at the bottom of the card due to h-full on parent and flex-grow on middle content */}
+            <div className="flex items-center text-[#0a5cff] font-bold mt-auto pt-6 border-t border-slate-50 flex-shrink-0">
               <span>Initialize Workflow</span>
               <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
