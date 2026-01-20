@@ -56,13 +56,13 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading }) => {
     });
   };
 
-  const controlClasses = "w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none bg-white text-slate-800 shadow-sm";
+  const controlClasses = "w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800 shadow-sm";
   
   const chipClasses = (selected: boolean) => 
     `px-3 py-2 rounded-lg border text-sm font-medium transition-all cursor-pointer flex items-center justify-center text-center ${
       selected 
-      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' 
-      : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-slate-50'
+      ? 'bg-[#0a5cff] border-[#0a5cff] text-white shadow-md' 
+      : 'bg-white border-slate-200 text-slate-600 hover:border-[#0a5cff]/50 hover:bg-slate-50'
     }`;
 
   return (
@@ -140,7 +140,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading }) => {
         className={`w-full py-4 px-6 rounded-xl text-white font-bold text-lg shadow-lg transition-all ${
           isLoading 
             ? 'bg-slate-400 cursor-not-allowed' 
-            : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] shadow-indigo-200 hover:shadow-indigo-300'
+            : 'bg-[#0a5cff] hover:bg-[#0048d9] active:scale-[0.98] shadow-[#0a5cff]/20 hover:shadow-[#0a5cff]/30'
         }`}
       >
         {isLoading ? (

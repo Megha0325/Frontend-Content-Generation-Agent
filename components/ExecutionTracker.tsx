@@ -11,7 +11,7 @@ const ExecutionTracker: React.FC<ExecutionTrackerProps> = ({ steps }) => {
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="p-6 border-b border-slate-50 bg-slate-50/50">
         <h3 className="font-bold text-slate-800 flex items-center">
-          <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 mr-2 text-[#0a5cff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           Active Execution Logs
@@ -23,7 +23,7 @@ const ExecutionTracker: React.FC<ExecutionTrackerProps> = ({ steps }) => {
             <div className="relative flex flex-col items-center mr-4">
               <div className={`z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${
                 step.status === 'completed' ? 'bg-green-100 border-green-500 text-green-600' :
-                step.status === 'running' ? 'bg-indigo-100 border-indigo-500 text-indigo-600 animate-pulse' :
+                step.status === 'running' ? 'bg-blue-50 border-[#0a5cff] text-[#0a5cff] animate-pulse' :
                 'bg-slate-50 border-slate-200 text-slate-400'
               }`}>
                 {step.status === 'completed' ? (
@@ -41,7 +41,7 @@ const ExecutionTracker: React.FC<ExecutionTrackerProps> = ({ steps }) => {
             <div className="pb-8">
               <h4 className={`font-semibold transition-colors ${
                 step.status === 'completed' ? 'text-slate-800' :
-                step.status === 'running' ? 'text-indigo-600' : 'text-slate-400'
+                step.status === 'running' ? 'text-[#0a5cff]' : 'text-slate-400'
               }`}>
                 {step.label}
               </h4>

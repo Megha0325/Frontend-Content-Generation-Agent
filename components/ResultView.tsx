@@ -24,7 +24,7 @@ const ResultView: React.FC<ResultViewProps> = ({ result, onClose }) => {
         </div>
         <button 
           onClick={onClose}
-          className="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium flex items-center"
+          className="px-4 py-2 text-slate-600 hover:text-[#0a5cff] font-medium flex items-center transition-colors"
         >
           <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           Back to Dashboard
@@ -39,7 +39,7 @@ const ResultView: React.FC<ResultViewProps> = ({ result, onClose }) => {
             </div>
           )}
           
-          <div className="prose prose-indigo max-w-none bg-white p-10 rounded-2xl shadow-sm border border-slate-100">
+          <div className="prose prose-slate max-w-none bg-white p-10 rounded-2xl shadow-sm border border-slate-100">
              <div className="whitespace-pre-wrap text-slate-800 text-lg leading-relaxed">
                {result.text}
              </div>
@@ -49,7 +49,7 @@ const ResultView: React.FC<ResultViewProps> = ({ result, onClose }) => {
         <div className="space-y-8">
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <h3 className="font-bold text-slate-800 mb-4 flex items-center">
-              <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 mr-2 text-[#0a5cff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
               Content Analytics
@@ -66,16 +66,16 @@ const ResultView: React.FC<ResultViewProps> = ({ result, onClose }) => {
                   />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
                     {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={index === 0 ? '#6366f1' : index === 1 ? '#8b5cf6' : '#ec4899'} />
+                      <Cell key={`cell-${index}`} fill={index === 0 ? '#0a5cff' : index === 1 ? '#8b5cf6' : '#ec4899'} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
             <div className="grid grid-cols-2 gap-4 mt-4">
-               <div className="p-3 bg-indigo-50 rounded-xl">
-                 <p className="text-xs text-indigo-600 font-bold uppercase">Sentiment</p>
-                 <p className="text-lg font-bold text-indigo-900">{result.metrics.sentiment}</p>
+               <div className="p-3 bg-blue-50 rounded-xl">
+                 <p className="text-xs text-[#0a5cff] font-bold uppercase">Sentiment</p>
+                 <p className="text-lg font-bold text-blue-900">{result.metrics.sentiment}</p>
                </div>
                <div className="p-3 bg-purple-50 rounded-xl">
                  <p className="text-xs text-purple-600 font-bold uppercase">Reading Time</p>
@@ -85,7 +85,7 @@ const ResultView: React.FC<ResultViewProps> = ({ result, onClose }) => {
           </div>
 
           <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-lg">
-            <h3 className="font-bold mb-4">Workflow Metadata</h3>
+            <h3 className="font-bold mb-4 text-white">Workflow Metadata</h3>
             <div className="space-y-3 text-sm">
               <div className="flex flex-col space-y-1">
                 <span className="text-slate-400">Content Type(s)</span>
@@ -99,16 +99,16 @@ const ResultView: React.FC<ResultViewProps> = ({ result, onClose }) => {
                 <span className="text-slate-400">Tone(s)</span>
                 <div className="flex flex-wrap gap-1">
                   {result.config.tone.map(t => (
-                    <span key={t} className="px-2 py-0.5 bg-indigo-900/40 rounded text-[10px] font-mono border border-indigo-800/50">{t}</span>
+                    <span key={t} className="px-2 py-0.5 bg-[#0a5cff]/10 rounded text-[10px] font-mono border border-[#0a5cff]/30 text-blue-200">{t}</span>
                   ))}
                 </div>
               </div>
               <div className="flex flex-col space-y-1">
                 <span className="text-slate-400">Image Context</span>
-                <span className="font-mono text-xs italic line-clamp-2">{result.config.imageContext || 'N/A'}</span>
+                <span className="font-mono text-xs italic line-clamp-2 text-slate-300">{result.config.imageContext || 'N/A'}</span>
               </div>
               <div className="pt-4 mt-4 border-t border-slate-800">
-                <button className="w-full py-2 bg-indigo-600 rounded-lg hover:bg-indigo-500 transition-colors font-bold">
+                <button className="w-full py-2 bg-[#0a5cff] rounded-lg hover:bg-[#0048d9] transition-colors font-bold text-white shadow-lg shadow-[#0a5cff]/20">
                   Push to N8N Output
                 </button>
               </div>
