@@ -24,9 +24,11 @@ const ResultView: React.FC<ResultViewProps> = ({ result, onClose }) => {
         </div>
         <button 
           onClick={onClose}
-          className="px-4 py-2 text-slate-600 hover:text-[#0a5cff] font-medium flex items-center transition-colors"
+          className="px-5 py-2.5 bg-[#0a5cff]/5 text-[#0a5cff] hover:bg-[#0a5cff]/10 border border-[#0a5cff]/20 rounded-xl font-bold flex items-center transition-all active:scale-95 shadow-sm"
         >
-          <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
           Back to Dashboard
         </button>
       </div>

@@ -1,18 +1,27 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkflowConfig, ContentType, Tone } from '../types';
 
 interface WorkflowFormProps {
   onSubmit: (config: WorkflowConfig) => void;
   isLoading: boolean;
+  initialContentTypes?: ContentType[];
 }
 
-const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading }) => {
+const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initialContentTypes }) => {
   const [topic, setTopic] = useState('');
-  const [selectedContentTypes, setSelectedContentTypes] = useState<ContentType[]>(['Blog Post']);
+  const [selectedContentTypes, setSelectedContentTypes] = useState<ContentType[]>([]);
   const [selectedTones, setSelectedTones] = useState<Tone[]>(['Professional']);
   const [imageContext, setImageContext] = useState('');
   const [genImages, setGenImages] = useState(true);
+
+  useEffect(() => {
+    if (initialContentTypes && initialContentTypes.length > 0) {
+      setSelectedContentTypes(initialContentTypes);
+    } else {
+      setSelectedContentTypes(['Blog Post']);
+    }
+  }, [initialContentTypes]);
 
   const contentTypes: ContentType[] = [
     'EXAIR - LinkedIn',
@@ -56,8 +65,9 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading }) => {
     });
   };
 
-  const controlClasses = "w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800 shadow-sm";
-  
+  const controlClasses = "w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800 shadow-sm text-sm";
+  const labelClasses = "text-sm font-semibold text-slate-700 uppercase tracking-wider block mb-2";
+
   const chipClasses = (selected: boolean) => 
     `px-3 py-2 rounded-lg border text-sm font-medium transition-all cursor-pointer flex items-center justify-center text-center ${
       selected 
@@ -65,10 +75,14 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading }) => {
       : 'bg-white border-slate-200 text-slate-600 hover:border-[#0a5cff]/50 hover:bg-slate-50'
     }`;
 
+  // Determine if we should show the platform selector. 
+  // If the agent selection only has one type (like 'Blog Post'), we hide it as it's specialized.
+  const showPlatformSelector = !initialContentTypes || initialContentTypes.length > 1;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Content Topic</label>
+      <div className="space-y-1">
+        <label className={labelClasses}>Content Topic</label>
         <input
           required
           type="text"
@@ -79,23 +93,33 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading }) => {
         />
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Platform / Type </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {contentTypes.map(type => (
-            <div 
-              key={type} 
-              onClick={() => toggleContentType(type)}
-              className={chipClasses(selectedContentTypes.includes(type))}
-            >
-              {type}
-            </div>
-          ))}
+      {showPlatformSelector && (
+        <div className="space-y-1 animate-in fade-in duration-300">
+          <label className={labelClasses}>Platform / Type </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {contentTypes.map(type => (
+              <div 
+                key={type} 
+                onClick={() => toggleContentType(type)}
+                className={chipClasses(selectedContentTypes.includes(type))}
+              >
+                {type}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Tone of Voice </label>
+      {!showPlatformSelector && selectedContentTypes.length > 0 && (
+        <div className="flex items-center space-x-2 pb-2">
+           <span className="text-[10px] font-bold bg-[#0a5cff]/10 text-[#0a5cff] px-2 py-0.5 rounded uppercase tracking-tighter border border-[#0a5cff]/20">
+             Targeting: {selectedContentTypes[0]}
+           </span>
+        </div>
+      )}
+
+      <div className="space-y-1">
+        <label className={labelClasses}>Tone of Voice </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           {tones.map(tone => (
             <div 
@@ -110,8 +134,8 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-        <div className="md:col-span-8 space-y-2">
-          <label className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Image Context / Prompt</label>
+        <div className="md:col-span-8 space-y-1">
+          <label className={labelClasses}>Image Context / Prompt</label>
           <input
             type="text"
             className={controlClasses}
@@ -121,8 +145,8 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading }) => {
           />
         </div>
 
-        <div className="md:col-span-4 space-y-2">
-          <label className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Image Needed?</label>
+        <div className="md:col-span-4 space-y-1">
+          <label className={labelClasses}>Image Needed?</label>
           <select
             className={controlClasses}
             value={genImages ? 'yes' : 'no'}

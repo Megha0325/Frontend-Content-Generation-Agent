@@ -39,6 +39,7 @@ export interface GenerationResult {
 }
 
 export enum AppStatus {
+  LANDING = 'LANDING',
   IDLE = 'IDLE',
   EXECUTING = 'EXECUTING',
   VIEWING = 'VIEWING'

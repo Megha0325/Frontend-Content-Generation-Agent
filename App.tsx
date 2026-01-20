@@ -1,13 +1,15 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { AppStatus, WorkflowConfig, WorkflowStep, GenerationResult } from './types';
+import { AppStatus, WorkflowConfig, WorkflowStep, GenerationResult, ContentType } from './types';
+import LandingPage from './components/LandingPage';
 import WorkflowForm from './components/WorkflowForm';
 import ExecutionTracker from './components/ExecutionTracker';
 import ResultView from './components/ResultView';
 import { generateWorkflowContent } from './services/geminiService';
 
 const App: React.FC = () => {
-  const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
+  const [status, setStatus] = useState<AppStatus>(AppStatus.LANDING);
+  const [selectedAgentTypes, setSelectedAgentTypes] = useState<ContentType[]>([]);
   const [activeSteps, setActiveSteps] = useState<WorkflowStep[]>([]);
   const [history, setHistory] = useState<GenerationResult[]>([]);
   const [selectedResult, setSelectedResult] = useState<GenerationResult | null>(null);
@@ -19,6 +21,11 @@ const App: React.FC = () => {
     { id: '4', label: 'AI Visual Assets Generation', status: 'idle' },
     { id: '5', label: 'Sentiment & SEO Optimization Check', status: 'idle' }
   ];
+
+  const handleSelectAgent = (types: ContentType[]) => {
+    setSelectedAgentTypes(types);
+    setStatus(AppStatus.IDLE);
+  };
 
   const runWorkflow = async (config: WorkflowConfig) => {
     setStatus(AppStatus.EXECUTING);
@@ -57,7 +64,13 @@ const App: React.FC = () => {
 
   const renderHeaderTitle = () => {
     switch (status) {
+      case AppStatus.LANDING:
+        return 'Selection Hub';
       case AppStatus.IDLE:
+        // Identify which agent we are in
+        if (selectedAgentTypes.includes('Blog Post') && selectedAgentTypes.length === 1) return 'Blog Creation Page';
+        if (selectedAgentTypes.includes('EXAIR - LinkedIn')) return 'Social Media Orchestration';
+        if (selectedAgentTypes.includes('Email News Letter')) return 'Email Campaign Builder';
         return 'Dashboard';
       case AppStatus.EXECUTING:
         return 'Executing Workflow...';
@@ -128,10 +141,17 @@ const App: React.FC = () => {
         <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-100 px-8 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button 
-              onClick={() => { setStatus(AppStatus.IDLE); setSelectedResult(null); }}
-              className={`p-2 rounded-lg hover:bg-slate-100 transition-colors ${status === AppStatus.IDLE ? 'text-[#0a5cff]' : 'text-slate-500'}`}
+              onClick={() => { setStatus(AppStatus.LANDING); setSelectedResult(null); }}
+              className={`p-2 rounded-xl transition-all ${
+                status === AppStatus.LANDING 
+                  ? 'text-slate-400 bg-slate-50' 
+                  : 'text-[#0a5cff] bg-[#0a5cff]/5 hover:bg-[#0a5cff]/10 ring-1 ring-[#0a5cff]/20'
+              }`}
+              title="Return to Selection Hub"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
             </button>
             <h1 className="text-xl font-bold text-slate-800">
               {renderHeaderTitle()}
@@ -146,17 +166,27 @@ const App: React.FC = () => {
         </header>
 
         <div className="p-8 max-w-6xl mx-auto">
+          {status === AppStatus.LANDING && (
+            <LandingPage onSelectAgent={handleSelectAgent} />
+          )}
+
           {status === AppStatus.IDLE && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
               <div className="lg:col-span-7">
                 <div className="mb-8">
-                  <h2 className="text-4xl font-black text-slate-900 tracking-tight">Generate Brilliance.</h2>
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tight">
+                    {selectedAgentTypes.includes('Blog Post') && selectedAgentTypes.length === 1 ? 'Publish Your Story.' : 'Generate Brilliance.'}
+                  </h2>
                   <p className="text-slate-500 text-lg mt-3 leading-relaxed">
                     Configure your parameters and trigger the multi-agent automation workflow. 
                     FlowForge orchestrates research, visual creation, and content synthesis.
                   </p>
                 </div>
-                <WorkflowForm onSubmit={runWorkflow} isLoading={false} />
+                <WorkflowForm 
+                  onSubmit={runWorkflow} 
+                  isLoading={false} 
+                  initialContentTypes={selectedAgentTypes}
+                />
               </div>
               
               <div className="lg:col-span-5 space-y-6">
