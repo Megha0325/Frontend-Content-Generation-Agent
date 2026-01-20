@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { WorkflowConfig, ContentType, Tone } from '../types';
 
 interface WorkflowFormProps {
@@ -15,6 +15,36 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
   const [imageContext, setImageContext] = useState('');
   const [genImages, setGenImages] = useState(true);
 
+  // Define the base sets of platforms
+  const socialPlatforms: ContentType[] = [
+    'EXAIR - LinkedIn',
+    'EXAIR Corporation - Facebook',
+    'exair_corporation - Instagram',
+    'EXAIR - Twitter'
+  ];
+
+  const allContentTypes: ContentType[] = [
+    ...socialPlatforms,
+    'Blog Post',
+    'Email News Letter'
+  ];
+
+  // Memoize visible content types based on initial selection context
+  const visibleContentTypes = useMemo(() => {
+    // If we're coming from the Social Media Agent (which passes social platforms initially)
+    // or if we're in a multi-select mode but only social was intended.
+    const hasSocialInitial = initialContentTypes?.some(t => socialPlatforms.includes(t));
+    const hasNonSocialInitial = initialContentTypes?.some(t => !socialPlatforms.includes(t));
+
+    // If initial selection is strictly social, only show social options.
+    if (hasSocialInitial && !hasNonSocialInitial) {
+      return socialPlatforms;
+    }
+    
+    // Otherwise show everything (default behavior or landing page fallback)
+    return allContentTypes;
+  }, [initialContentTypes]);
+
   useEffect(() => {
     if (initialContentTypes && initialContentTypes.length > 0) {
       setSelectedContentTypes(initialContentTypes);
@@ -22,15 +52,6 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
       setSelectedContentTypes(['Blog Post']);
     }
   }, [initialContentTypes]);
-
-  const contentTypes: ContentType[] = [
-    'EXAIR - LinkedIn',
-    'EXAIR Corporation - Facebook',
-    'exair_corporation - Instagram',
-    'EXAIR - Twitter',
-    'Blog Post',
-    'Email News Letter'
-  ];
 
   const tones: Tone[] = ['Professional', 'Casual', 'Witty', 'Authoritative', 'Inspirational'];
 
@@ -97,7 +118,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
         <div className="space-y-1 animate-in fade-in duration-300">
           <label className={labelClasses}>Platform / Type </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {contentTypes.map(type => (
+            {visibleContentTypes.map(type => (
               <div 
                 key={type} 
                 onClick={() => toggleContentType(type)}
