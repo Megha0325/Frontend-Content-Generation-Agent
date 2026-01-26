@@ -5,10 +5,14 @@ import LandingPage from './components/LandingPage';
 import WorkflowForm from './components/WorkflowForm';
 import ExecutionTracker from './components/ExecutionTracker';
 import ResultView from './components/ResultView';
+import LoginPage from './components/LoginPage';
+import SignUpPage from './components/SignUpPage';
+import VerifyEmailPage from './components/VerifyEmailPage';
 import { generateWorkflowContent } from './services/geminiService';
 
 const App: React.FC = () => {
-  const [status, setStatus] = useState<AppStatus>(AppStatus.LANDING);
+  const [status, setStatus] = useState<AppStatus>(AppStatus.LOGIN);
+  const [userEmail, setUserEmail] = useState<string>('');
   const [selectedAgentTypes, setSelectedAgentTypes] = useState<ContentType[]>([]);
   const [activeSteps, setActiveSteps] = useState<WorkflowStep[]>([]);
   const [history, setHistory] = useState<GenerationResult[]>([]);
@@ -21,6 +25,19 @@ const App: React.FC = () => {
     { id: '4', label: 'AI Visual Assets Generation', status: 'idle' },
     { id: '5', label: 'Sentiment & SEO Optimization Check', status: 'idle' }
   ];
+
+  const handleLogin = () => {
+    setStatus(AppStatus.LANDING);
+  };
+
+  const handleSignUp = (email: string) => {
+    setUserEmail(email);
+    setStatus(AppStatus.VERIFY_EMAIL);
+  };
+
+  const handleEmailVerified = () => {
+    setStatus(AppStatus.LANDING);
+  };
 
   const handleSelectAgent = (types: ContentType[]) => {
     setSelectedAgentTypes(types);
@@ -81,8 +98,26 @@ const App: React.FC = () => {
     }
   };
 
+  if (status === AppStatus.LOGIN) {
+    return <LoginPage onLogin={handleLogin} onGoToSignUp={() => setStatus(AppStatus.SIGNUP)} />;
+  }
+
+  if (status === AppStatus.SIGNUP) {
+    return <SignUpPage onSignUp={handleSignUp} onGoToLogin={() => setStatus(AppStatus.LOGIN)} />;
+  }
+
+  if (status === AppStatus.VERIFY_EMAIL) {
+    return (
+      <VerifyEmailPage 
+        email={userEmail} 
+        onVerified={handleEmailVerified} 
+        onResend={() => console.log('Resending...')} 
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex bg-slate-50 text-slate-900 animate-in fade-in duration-1000">
       {/* Sidebar */}
       <aside className="w-80 bg-white border-r border-slate-200 flex flex-col hidden md:flex">
         <div className="p-6 border-b border-slate-100 flex items-center space-x-3">
@@ -158,10 +193,19 @@ const App: React.FC = () => {
             </h1>
           </div>
           <div className="flex space-x-2">
-            <div className="flex items-center px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-bold border border-green-100">
-              <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse" />
-              N8N Connection Live
-            </div>
+            <button
+              onClick={() => {
+                setStatus(AppStatus.LOGIN);
+                setSelectedResult(null);
+                setSelectedAgentTypes([]);
+              }}
+              className="flex items-center px-4 py-2 bg-white text-[#0a5cff] hover:bg-[#0a5cff]/5 border border-[#0a5cff]/20 rounded-xl text-xs font-bold transition-all"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Back to Sign In
+            </button>
           </div>
         </header>
 

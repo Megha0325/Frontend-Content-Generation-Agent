@@ -39,6 +39,9 @@ export interface GenerationResult {
 }
 
 export enum AppStatus {
+  LOGIN = 'LOGIN',
+  SIGNUP = 'SIGNUP',
+  VERIFY_EMAIL = 'VERIFY_EMAIL',
   LANDING = 'LANDING',
   IDLE = 'IDLE',
   EXECUTING = 'EXECUTING',
