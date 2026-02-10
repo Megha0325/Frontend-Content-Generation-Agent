@@ -7,7 +7,10 @@ export type ContentType =
   | 'Blog Post' 
   | 'Email News Letter';
 
-export type Tone = 'Professional' | 'Casual' | 'Witty' | 'Authoritative' | 'Inspirational';
+export type Tone = 
+  | 'Professional' | 'Casual' | 'Friendly' | 'Technical' | 'Conversational'
+  | 'Informative' | 'Sales Focused' | 'Serious' | 'Light Hearted'
+  | 'Witty' | 'Authoritative' | 'Inspirational';
 
 export interface WorkflowConfig {
   topic: string;

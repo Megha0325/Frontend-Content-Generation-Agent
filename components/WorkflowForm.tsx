@@ -11,11 +11,11 @@ interface WorkflowFormProps {
 const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initialContentTypes }) => {
   const [topic, setTopic] = useState('');
   const [selectedContentTypes, setSelectedContentTypes] = useState<ContentType[]>([]);
-  const [selectedTones, setSelectedTones] = useState<Tone[]>(['Professional']);
+  const [selectedTones, setSelectedTones] = useState<Tone[]>([]);
   const [imageContext, setImageContext] = useState('');
   const [genImages, setGenImages] = useState(true);
 
-  // Define the base sets of platforms
+  // Define platforms
   const socialPlatforms: ContentType[] = [
     'EXAIR - LinkedIn',
     'EXAIR Corporation - Facebook',
@@ -29,31 +29,52 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
     'Email News Letter'
   ];
 
+  // Tone lists based on context
+  const blogTones: Tone[] = ['Professional', 'Casual', 'Friendly', 'Technical', 'Conversational'];
+  const socialTones: Tone[] = ['Informative', 'Sales Focused', 'Serious', 'Light Hearted'];
+  const defaultTones: Tone[] = ['Professional', 'Inspirational', 'Authoritative', 'Witty'];
+
+  // Determine available tones based on selected content types
+  const availableTones = useMemo(() => {
+    if (selectedContentTypes.includes('Blog Post')) {
+      return blogTones;
+    }
+    if (selectedContentTypes.some(t => socialPlatforms.includes(t))) {
+      return socialTones;
+    }
+    return defaultTones;
+  }, [selectedContentTypes]);
+
+  // Handle initialization and tone reset on platform change
+  useEffect(() => {
+    if (initialContentTypes && initialContentTypes.length > 0) {
+      setSelectedContentTypes(initialContentTypes);
+      
+      // Reset selected tones when the platform agent changes
+      if (initialContentTypes.includes('Blog Post')) {
+        setSelectedTones(['Professional']);
+      } else if (initialContentTypes.some(t => socialPlatforms.includes(t))) {
+        setSelectedTones(['Informative']);
+      } else {
+        setSelectedTones(['Professional']);
+      }
+    } else {
+      setSelectedContentTypes(['Blog Post']);
+      setSelectedTones(['Professional']);
+    }
+  }, [initialContentTypes]);
+
   // Memoize visible content types based on initial selection context
   const visibleContentTypes = useMemo(() => {
-    // If we're coming from the Social Media Agent (which passes social platforms initially)
-    // or if we're in a multi-select mode but only social was intended.
     const hasSocialInitial = initialContentTypes?.some(t => socialPlatforms.includes(t));
     const hasNonSocialInitial = initialContentTypes?.some(t => !socialPlatforms.includes(t));
 
-    // If initial selection is strictly social, only show social options.
     if (hasSocialInitial && !hasNonSocialInitial) {
       return socialPlatforms;
     }
     
-    // Otherwise show everything (default behavior or landing page fallback)
     return allContentTypes;
   }, [initialContentTypes]);
-
-  useEffect(() => {
-    if (initialContentTypes && initialContentTypes.length > 0) {
-      setSelectedContentTypes(initialContentTypes);
-    } else {
-      setSelectedContentTypes(['Blog Post']);
-    }
-  }, [initialContentTypes]);
-
-  const tones: Tone[] = ['Professional', 'Casual', 'Witty', 'Authoritative', 'Inspirational'];
 
   const toggleContentType = (type: ContentType) => {
     setSelectedContentTypes(prev => 
@@ -81,7 +102,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
       topic,
       contentType: selectedContentTypes,
       tone: selectedTones,
-      imageContext,
+      imageContext: genImages ? imageContext : '',
       generateImages: genImages
     });
   };
@@ -96,8 +117,6 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
       : 'bg-white border-slate-200 text-slate-600 hover:border-[#0a5cff]/50 hover:bg-slate-50'
     }`;
 
-  // Determine if we should show the platform selector. 
-  // If the agent selection only has one type (like 'Blog Post'), we hide it as it's specialized.
   const showPlatformSelector = !initialContentTypes || initialContentTypes.length > 1;
 
   return (
@@ -142,7 +161,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
       <div className="space-y-1">
         <label className={labelClasses}>Tone of Voice </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-          {tones.map(tone => (
+          {availableTones.map(tone => (
             <div 
               key={tone} 
               onClick={() => toggleTone(tone)}
@@ -154,29 +173,32 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-        <div className="md:col-span-8 space-y-1">
-          <label className={labelClasses}>Image Context / Prompt</label>
-          <input
-            type="text"
-            className={controlClasses}
-            placeholder="e.g. Industrial factory setting with clean air lines"
-            value={imageContext}
-            onChange={(e) => setImageContext(e.target.value)}
-          />
+      <div className="space-y-4 pt-2 border-t border-slate-50">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Image Needed?</label>
+          <label className="inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              className="sr-only peer" 
+              checked={genImages}
+              onChange={() => setGenImages(!genImages)}
+            />
+            <div className="relative w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#0a5cff]/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#0a5cff]"></div>
+          </label>
         </div>
 
-        <div className="md:col-span-4 space-y-1">
-          <label className={labelClasses}>Image Needed?</label>
-          <select
-            className={controlClasses}
-            value={genImages ? 'yes' : 'no'}
-            onChange={(e) => setGenImages(e.target.value === 'yes')}
-          >
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select>
-        </div>
+        {genImages && (
+          <div className="space-y-1 animate-in slide-in-from-top-2 fade-in duration-300">
+            <label className={labelClasses}>Visual Context / Image Prompt</label>
+            <textarea
+              rows={2}
+              className={`${controlClasses} resize-none`}
+              placeholder="e.g. A sleek industrial control room with holographic air-flow diagrams, hyper-realistic, 8k resolution"
+              value={imageContext}
+              onChange={(e) => setImageContext(e.target.value)}
+            />
+          </div>
+        )}
       </div>
 
       <button
