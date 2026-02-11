@@ -6,14 +6,16 @@ interface WorkflowFormProps {
   onSubmit: (config: WorkflowConfig) => void;
   isLoading: boolean;
   initialContentTypes?: ContentType[];
+  userEmail: string;
 }
 
-const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initialContentTypes }) => {
+const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initialContentTypes, userEmail }) => {
   const [topic, setTopic] = useState('');
   const [selectedContentTypes, setSelectedContentTypes] = useState<ContentType[]>([]);
   const [selectedTones, setSelectedTones] = useState<Tone[]>([]);
   const [imageContext, setImageContext] = useState('');
   const [genImages, setGenImages] = useState(true);
+  const [targetEmail, setTargetEmail] = useState(userEmail);
 
   // Define platforms
   const socialPlatforms: ContentType[] = [
@@ -29,28 +31,19 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
     'Email News Letter'
   ];
 
-  // Tone lists based on context
   const blogTones: Tone[] = ['Professional', 'Casual', 'Friendly', 'Technical', 'Conversational'];
   const socialTones: Tone[] = ['Informative', 'Sales Focused', 'Serious', 'Light Hearted'];
   const defaultTones: Tone[] = ['Professional', 'Inspirational', 'Authoritative', 'Witty'];
 
-  // Determine available tones based on selected content types
   const availableTones = useMemo(() => {
-    if (selectedContentTypes.includes('Blog Post')) {
-      return blogTones;
-    }
-    if (selectedContentTypes.some(t => socialPlatforms.includes(t))) {
-      return socialTones;
-    }
+    if (selectedContentTypes.includes('Blog Post')) return blogTones;
+    if (selectedContentTypes.some(t => socialPlatforms.includes(t))) return socialTones;
     return defaultTones;
   }, [selectedContentTypes]);
 
-  // Handle initialization and tone reset on platform change
   useEffect(() => {
     if (initialContentTypes && initialContentTypes.length > 0) {
       setSelectedContentTypes(initialContentTypes);
-      
-      // Reset selected tones when the platform agent changes
       if (initialContentTypes.includes('Blog Post')) {
         setSelectedTones(['Professional']);
       } else if (initialContentTypes.some(t => socialPlatforms.includes(t))) {
@@ -64,15 +57,15 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
     }
   }, [initialContentTypes]);
 
-  // Memoize visible content types based on initial selection context
+  // Keep target email in sync with logged in user unless they change it
+  useEffect(() => {
+    setTargetEmail(userEmail);
+  }, [userEmail]);
+
   const visibleContentTypes = useMemo(() => {
     const hasSocialInitial = initialContentTypes?.some(t => socialPlatforms.includes(t));
     const hasNonSocialInitial = initialContentTypes?.some(t => !socialPlatforms.includes(t));
-
-    if (hasSocialInitial && !hasNonSocialInitial) {
-      return socialPlatforms;
-    }
-    
+    if (hasSocialInitial && !hasNonSocialInitial) return socialPlatforms;
     return allContentTypes;
   }, [initialContentTypes]);
 
@@ -103,7 +96,8 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
       contentType: selectedContentTypes,
       tone: selectedTones,
       imageContext: genImages ? imageContext : '',
-      generateImages: genImages
+      generateImages: genImages,
+      targetEmail: targetEmail
     });
   };
 
@@ -193,12 +187,32 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
             <textarea
               rows={2}
               className={`${controlClasses} resize-none`}
-              placeholder="e.g. A sleek industrial control room with holographic air-flow diagrams, hyper-realistic, 8k resolution"
+              placeholder="e.g. A sleek industrial control room..."
               value={imageContext}
               onChange={(e) => setImageContext(e.target.value)}
             />
           </div>
         )}
+
+        <div className="space-y-1 animate-in slide-in-from-top-1 fade-in duration-400">
+          <label className={labelClasses}>Send to Email</label>
+          <div className="relative">
+            <input
+              required
+              type="email"
+              className={`${controlClasses} pl-10`}
+              placeholder="Enter delivery email"
+              value={targetEmail}
+              onChange={(e) => setTargetEmail(e.target.value)}
+            />
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-[10px] text-slate-400 font-medium italic mt-1 ml-1">Resulting assets and reports will be dispatched here.</p>
+        </div>
       </div>
 
       <button

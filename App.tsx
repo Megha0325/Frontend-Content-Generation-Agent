@@ -8,7 +8,7 @@ import ResultView from './components/ResultView';
 import LoginPage from './components/LoginPage';
 import SignUpPage from './components/SignUpPage';
 import VerifyEmailPage from './components/VerifyEmailPage';
-import { triggerN8NWorkflow, getRedirectUrl } from './services/n8nService';
+import { triggerN8NWorkflow, getRedirectUrl, sendVerificationEmail } from './services/n8nService';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<AppStatus>(AppStatus.LOGIN);
@@ -23,11 +23,27 @@ const App: React.FC = () => {
     { id: '2', label: 'Establishing Bridge to N8N', status: 'idle' },
     { id: '3', label: 'Triggering Webhook Listener', status: 'idle' },
     { id: '4', label: 'Handoff Confirmed', status: 'idle' },
-    { id: '5', label: 'Redirecting to Orchestrator...', status: 'idle' }
+    { id: '5', label: 'Processing at Destination', status: 'idle' }
   ];
 
-  const handleLogin = () => setStatus(AppStatus.LANDING);
-  const handleSignUp = (email: string) => { setUserEmail(email); setStatus(AppStatus.VERIFY_EMAIL); };
+  const handleLogin = (email: string) => {
+    setUserEmail(email);
+    setStatus(AppStatus.LANDING);
+  };
+  
+  const handleSignUp = async (email: string) => { 
+    setUserEmail(email); 
+    setStatus(AppStatus.VERIFY_EMAIL);
+    // Trigger real verification email via N8N
+    await sendVerificationEmail(email);
+  };
+
+  const handleResendEmail = async () => {
+    if (userEmail) {
+      await sendVerificationEmail(userEmail);
+    }
+  };
+
   const handleEmailVerified = () => setStatus(AppStatus.LANDING);
 
   const handleSelectAgent = (types: ContentType[]) => {
@@ -40,46 +56,40 @@ const App: React.FC = () => {
     const steps = [...handoffSteps];
     setActiveSteps(steps);
 
-    // Step 1: Packaging Payload
     steps[0] = { ...steps[0], status: 'running' };
     setActiveSteps([...steps]);
     await new Promise(r => setTimeout(r, 600));
     steps[0] = { ...steps[0], status: 'completed' };
 
-    // Step 2: Establishing Bridge
     steps[1] = { ...steps[1], status: 'running' };
     setActiveSteps([...steps]);
     await new Promise(r => setTimeout(r, 800));
     steps[1] = { ...steps[1], status: 'completed' };
 
-    // Step 3: Triggering Webhook (REAL API CALL)
     steps[2] = { ...steps[2], status: 'running' };
     setActiveSteps([...steps]);
     
+    // Ensure the payload is sent with the targetEmail from the form
     const result = await triggerN8NWorkflow(config);
     
     if (result.success) {
       steps[2] = { ...steps[2], status: 'completed' };
-      
-      // Step 4: Handoff Confirmed
       steps[3] = { ...steps[3], status: 'running' };
       setActiveSteps([...steps]);
       await new Promise(r => setTimeout(r, 800));
       steps[3] = { ...steps[3], status: 'completed' };
 
-      // Step 5: Final Redirect Notice
       steps[4] = { ...steps[4], status: 'running' };
       setActiveSteps([...steps]);
       await new Promise(r => setTimeout(r, 1000));
+      steps[4] = { ...steps[4], status: 'completed' };
 
-      // REDIRECT TO N8N CLOUD
-      window.location.href = getRedirectUrl();
+      setStatus(AppStatus.COMPLETED);
     } else {
-      // Handle error visually
       steps[2] = { ...steps[2], status: 'failed' };
       setActiveSteps([...steps]);
       setTimeout(() => {
-        alert(`N8N Workflow Error: ${result.error || "The remote server returned an internal error."}\n\nPlease check your N8N execution logs for the 500 error details.`);
+        alert(`N8N Workflow Error: ${result.error || "The remote server returned an internal error."}`);
         setStatus(AppStatus.IDLE);
       }, 500);
     }
@@ -100,6 +110,7 @@ const App: React.FC = () => {
         return 'Dashboard';
       case AppStatus.EXECUTING: return 'N8N Cloud Handoff';
       case AppStatus.VIEWING: return 'Generation Result';
+      case AppStatus.COMPLETED: return 'Status Report';
       default: return '';
     }
   };
@@ -113,12 +124,12 @@ const App: React.FC = () => {
   const getMainOrchestrationSubtitle = () => {
     if (selectedAgentTypes.includes('Blog Post')) return 'SEO-optimized articles for technical readers';
     if (selectedAgentTypes.some(t => t.includes('EXAIR'))) return 'Posts for LinkedIn, Facebook, Instagram, Twitter';
-    return `Configuring ${selectedAgentTypes.join(', ')} payload for transmission to your N8N cloud instance.`;
+    return `Configuring ${selectedAgentTypes.join(', ')} payload for transmission.`;
   };
 
   if (status === AppStatus.LOGIN) return <LoginPage onLogin={handleLogin} onGoToSignUp={() => setStatus(AppStatus.SIGNUP)} />;
   if (status === AppStatus.SIGNUP) return <SignUpPage onSignUp={handleSignUp} onGoToLogin={() => setStatus(AppStatus.LOGIN)} />;
-  if (status === AppStatus.VERIFY_EMAIL) return <VerifyEmailPage email={userEmail} onVerified={handleEmailVerified} onResend={() => {}} />;
+  if (status === AppStatus.VERIFY_EMAIL) return <VerifyEmailPage email={userEmail} onVerified={handleEmailVerified} onResend={handleResendEmail} />;
 
   return (
     <div className="min-h-screen flex bg-slate-50 text-slate-900 animate-in fade-in duration-1000">
@@ -141,10 +152,10 @@ const App: React.FC = () => {
           )}
         </div>
         <div className="p-6 bg-slate-50 border-t border-slate-100">
-          <div className="flex items-center space-x-3 p-3 bg-white rounded-xl shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#0a5cff] to-blue-400" />
-            <div className="flex-1">
-              <p className="text-xs font-bold text-slate-900">K&J Tech Admin</p>
+          <div className="flex items-center space-x-3 p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#0a5cff] to-blue-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-slate-900 truncate" title={userEmail}>{userEmail || 'Guest User'}</p>
               <p className="text-[10px] text-slate-500 uppercase font-medium">Cloud Bridge Active</p>
             </div>
           </div>
@@ -172,7 +183,12 @@ const App: React.FC = () => {
                   {getMainOrchestrationSubtitle()}
                 </p>
               </div>
-              <WorkflowForm onSubmit={runWorkflow} isLoading={false} initialContentTypes={selectedAgentTypes} />
+              <WorkflowForm 
+                onSubmit={runWorkflow} 
+                isLoading={false} 
+                initialContentTypes={selectedAgentTypes} 
+                userEmail={userEmail}
+              />
             </div>
           )}
 
@@ -197,6 +213,35 @@ const App: React.FC = () => {
                     <span className="text-xs font-mono text-slate-400">ENDPOINT: kandjtech.app.n8n.cloud</span>
                   </div>
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">REST Protocol Secure</span>
+               </div>
+            </div>
+          )}
+
+          {status === AppStatus.COMPLETED && (
+            <div className="max-w-2xl mx-auto py-12 text-center animate-in zoom-in duration-700">
+               <div className="mb-8">
+                  <div className="w-24 h-24 bg-green-50 rounded-full border-4 border-green-500 flex items-center justify-center text-green-500 mx-auto shadow-xl shadow-green-100">
+                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+               </div>
+               <h2 className="text-4xl font-black text-slate-900 mb-4">Task Completed Successfully</h2>
+               <p className="text-slate-500 text-lg mb-10 max-w-md mx-auto">
+                 The content orchestration payload has been successfully received by the N8N production engine for <strong>{userEmail}</strong>. 
+                 Your assets are now being generated in the cloud.
+               </p>
+               
+               <div className="flex items-center justify-center">
+                 <button 
+                   onClick={() => setStatus(AppStatus.LANDING)}
+                   className="px-10 py-4 bg-[#0a5cff] text-white font-bold rounded-2xl shadow-lg shadow-[#0a5cff]/20 hover:bg-[#0048d9] transition-all flex items-center group active:scale-95"
+                 >
+                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                   </svg>
+                   Home
+                 </button>
                </div>
             </div>
           )}

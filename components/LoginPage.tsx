@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (email: string) => void;
   onGoToSignUp: () => void;
 }
 
@@ -18,7 +18,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onGoToSignUp }) => {
     // Simulate authentication delay
     setTimeout(() => {
       setIsLoading(false);
-      onLogin();
+      onLogin(email); // Pass the email to the login handler
     }, 1200);
   };
 

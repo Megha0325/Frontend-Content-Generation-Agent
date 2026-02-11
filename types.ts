@@ -18,6 +18,7 @@ export interface WorkflowConfig {
   tone: Tone[];
   imageContext: string;
   generateImages: boolean;
+  targetEmail: string;
   webhookUrl?: string;
 }
 
@@ -48,5 +49,6 @@ export enum AppStatus {
   LANDING = 'LANDING',
   IDLE = 'IDLE',
   EXECUTING = 'EXECUTING',
-  VIEWING = 'VIEWING'
+  VIEWING = 'VIEWING',
+  COMPLETED = 'COMPLETED'
 }
