@@ -2,10 +2,11 @@
 import { WorkflowConfig } from "../types";
 
 /**
- * N8N PRODUCTION ENDPOINTS
+ * N8N PRODUCTION & TEST ENDPOINTS
  */
 const N8N_BLOG_WEBHOOK_URL = 'https://kandjtech.app.n8n.cloud/webhook/472e9bac-9aa8-4c02-b037-494ff43262ec';
 const N8N_SOCIAL_WEBHOOK_URL = 'https://kandjtech.app.n8n.cloud/webhook/885b3900-d6f2-4caf-94f9-cd5f90427209';
+const N8N_EMAIL_CAMPAIGN_TEST_URL = 'https://kandjtech.app.n8n.cloud/webhook/84ed113a-d98e-421a-941e-d1db12bf5ed4';
 const N8N_VERIFICATION_WEBHOOK_URL = 'https://kandjtech.app.n8n.cloud/webhook/verify-email'; 
 const N8N_EXECUTION_VIEW_URL = 'https://kandjtech.app.n8n.cloud/home/workflows';
 
@@ -34,12 +35,24 @@ export async function triggerN8NWorkflow(config: WorkflowConfig): Promise<{ succ
     const isSocial = config.contentType.some(t => 
       ['EXAIR - LinkedIn', 'EXAIR Corporation - Facebook', 'exair_corporation - Instagram', 'EXAIR - Twitter'].includes(t)
     );
+    const isEmailCampaign = config.contentType.includes('Email News Letter');
 
     let url = '';
     let payload: any[] = [];
 
-    // Constructing specific payloads while ensuring 'email' key is present for N8N processing
-    if (isBlog) {
+    if (isEmailCampaign) {
+      url = N8N_EMAIL_CAMPAIGN_TEST_URL;
+      payload = [
+        {
+          "Topic": config.topic || "No Topic Provided",
+          "Tone": config.tone || [],
+          "Target Email": config.targetEmail,
+          "email": config.targetEmail,
+          "submittedAt": new Date().toISOString(),
+          "formMode": "test"
+        }
+      ];
+    } else if (isBlog) {
       url = N8N_BLOG_WEBHOOK_URL;
       payload = [
         {
@@ -48,7 +61,7 @@ export async function triggerN8NWorkflow(config: WorkflowConfig): Promise<{ succ
           "Image Needed?": config.generateImages ? "Yes" : "No",
           "Image Context/Prompt": config.imageContext || "",
           "Target Email": config.targetEmail,
-          "email": config.targetEmail, // Generic key for N8N email nodes
+          "email": config.targetEmail, 
           "submittedAt": new Date().toISOString(),
           "formMode": "production"
         }
@@ -63,7 +76,7 @@ export async function triggerN8NWorkflow(config: WorkflowConfig): Promise<{ succ
           "Image Desired?": config.generateImages ? "Yes" : "No",
           "Image Description": config.imageContext || "",
           "Target Email": config.targetEmail,
-          "email": config.targetEmail, // Generic key for N8N email nodes
+          "email": config.targetEmail,
           "submittedAt": new Date().toISOString(),
           "formMode": "production"
         }
@@ -79,8 +92,9 @@ export async function triggerN8NWorkflow(config: WorkflowConfig): Promise<{ succ
     }
 
     console.group(`FlowForge >> N8N Transmit`);
-    console.log("Endpoint:", url);
-    console.log("Target Email Dispatch:", config.targetEmail);
+    console.log("Endpoint Target:", url);
+    console.log("Recipient Email:", config.targetEmail);
+    console.log("Payload Content:", payload);
     console.groupEnd();
 
     const response = await fetch(url, {

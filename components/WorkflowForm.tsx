@@ -14,7 +14,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
   const [selectedContentTypes, setSelectedContentTypes] = useState<ContentType[]>([]);
   const [selectedTones, setSelectedTones] = useState<Tone[]>([]);
   const [imageContext, setImageContext] = useState('');
-  const [genImages, setGenImages] = useState(true);
+  const [genImages, setGenImages] = useState(false);
   const [targetEmail, setTargetEmail] = useState(userEmail);
 
   // Define platforms
@@ -25,49 +25,42 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
     'EXAIR - Twitter'
   ];
 
-  const allContentTypes: ContentType[] = [
-    ...socialPlatforms,
-    'Blog Post',
-    'Email News Letter'
-  ];
+  // Detect current mode
+  const isBlogMode = useMemo(() => initialContentTypes?.includes('Blog Post'), [initialContentTypes]);
+  const isEmailMode = useMemo(() => initialContentTypes?.includes('Email News Letter'), [initialContentTypes]);
+  const isSocialMode = useMemo(() => !isBlogMode && !isEmailMode, [isBlogMode, isEmailMode]);
 
   const blogTones: Tone[] = ['Professional', 'Casual', 'Friendly', 'Technical', 'Conversational'];
   const socialTones: Tone[] = ['Informative', 'Sales Focused', 'Serious', 'Light Hearted'];
   const defaultTones: Tone[] = ['Professional', 'Inspirational', 'Authoritative', 'Witty'];
 
   const availableTones = useMemo(() => {
-    if (selectedContentTypes.includes('Blog Post')) return blogTones;
-    if (selectedContentTypes.some(t => socialPlatforms.includes(t))) return socialTones;
+    if (isBlogMode) return blogTones;
+    if (isSocialMode) return socialTones;
     return defaultTones;
-  }, [selectedContentTypes]);
+  }, [isBlogMode, isSocialMode]);
 
   useEffect(() => {
-    if (initialContentTypes && initialContentTypes.length > 0) {
-      setSelectedContentTypes(initialContentTypes);
-      if (initialContentTypes.includes('Blog Post')) {
-        setSelectedTones(['Professional']);
-      } else if (initialContentTypes.some(t => socialPlatforms.includes(t))) {
-        setSelectedTones(['Informative']);
-      } else {
-        setSelectedTones(['Professional']);
-      }
-    } else {
+    // Reset or set initial types based on mode
+    if (isBlogMode) {
       setSelectedContentTypes(['Blog Post']);
-      setSelectedTones(['Professional']);
+    } else if (isEmailMode) {
+      setSelectedContentTypes(['Email News Letter']);
+    } else {
+      // Social mode: "let the client select whatever platforms they want" (start empty)
+      setSelectedContentTypes([]);
     }
-  }, [initialContentTypes]);
+    
+    // Tone: start empty as requested
+    setSelectedTones([]);
+    
+    // Ensure images are NOT pre-selected as "yes"
+    setGenImages(false);
+  }, [initialContentTypes, isBlogMode, isEmailMode]);
 
-  // Keep target email in sync with logged in user unless they change it
   useEffect(() => {
     setTargetEmail(userEmail);
   }, [userEmail]);
-
-  const visibleContentTypes = useMemo(() => {
-    const hasSocialInitial = initialContentTypes?.some(t => socialPlatforms.includes(t));
-    const hasNonSocialInitial = initialContentTypes?.some(t => !socialPlatforms.includes(t));
-    if (hasSocialInitial && !hasNonSocialInitial) return socialPlatforms;
-    return allContentTypes;
-  }, [initialContentTypes]);
 
   const toggleContentType = (type: ContentType) => {
     setSelectedContentTypes(prev => 
@@ -111,8 +104,6 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
       : 'bg-white border-slate-200 text-slate-600 hover:border-[#0a5cff]/50 hover:bg-slate-50'
     }`;
 
-  const showPlatformSelector = !initialContentTypes || initialContentTypes.length > 1;
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
       <div className="space-y-1">
@@ -127,11 +118,12 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
         />
       </div>
 
-      {showPlatformSelector && (
+      {isSocialMode && (
         <div className="space-y-1 animate-in fade-in duration-300">
-          <label className={labelClasses}>Platform / Type </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {visibleContentTypes.map(type => (
+          <label className={labelClasses}>Platform Selection</label>
+          <p className="text-[10px] text-slate-400 font-medium mb-3 -mt-1">Select one or more social destinations</p>
+          <div className="grid grid-cols-2 gap-2">
+            {socialPlatforms.map(type => (
               <div 
                 key={type} 
                 onClick={() => toggleContentType(type)}
@@ -141,14 +133,6 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {!showPlatformSelector && selectedContentTypes.length > 0 && (
-        <div className="flex items-center space-x-2 pb-2">
-           <span className="text-[10px] font-bold bg-[#0a5cff]/10 text-[#0a5cff] px-2 py-0.5 rounded uppercase tracking-tighter border border-[#0a5cff]/20">
-             Targeting: {selectedContentTypes[0]}
-           </span>
         </div>
       )}
 
@@ -211,7 +195,6 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
               </svg>
             </div>
           </div>
-          <p className="text-[10px] text-slate-400 font-medium italic mt-1 ml-1">Resulting assets and reports will be dispatched here.</p>
         </div>
       </div>
 
@@ -230,7 +213,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span>Orchestrating Workflow...</span>
+            <span>Orchestrating...</span>
           </div>
         ) : 'Execute Content Automation'}
       </button>

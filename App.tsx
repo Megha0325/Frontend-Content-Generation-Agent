@@ -118,12 +118,14 @@ const App: React.FC = () => {
   const getMainOrchestrationTitle = () => {
     if (selectedAgentTypes.includes('Blog Post')) return 'Blog Post Orchestrator';
     if (selectedAgentTypes.some(t => t.includes('EXAIR'))) return 'Social Media Orchestration';
+    if (selectedAgentTypes.includes('Email News Letter')) return 'Email Campaign Builder';
     return 'K&J Cloud Orchestrator';
   };
 
   const getMainOrchestrationSubtitle = () => {
     if (selectedAgentTypes.includes('Blog Post')) return 'SEO-optimized articles for technical readers';
     if (selectedAgentTypes.some(t => t.includes('EXAIR'))) return 'Posts for LinkedIn, Facebook, Instagram, Twitter';
+    if (selectedAgentTypes.includes('Email News Letter')) return 'Technical update newsletters & campaigns';
     return `Configuring ${selectedAgentTypes.join(', ')} payload for transmission.`;
   };
 
