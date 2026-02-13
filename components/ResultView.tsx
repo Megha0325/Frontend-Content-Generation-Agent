@@ -111,7 +111,7 @@ const ResultView: React.FC<ResultViewProps> = ({ result, onClose }) => {
               </div>
               <div className="pt-4 mt-4 border-t border-slate-800">
                 <button className="w-full py-2 bg-[#0a5cff] rounded-lg hover:bg-[#0048d9] transition-colors font-bold text-white shadow-lg shadow-[#0a5cff]/20">
-                  Push to N8N Output
+                  Sync to Production
                 </button>
               </div>
             </div>

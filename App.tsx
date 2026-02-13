@@ -8,7 +8,7 @@ import ResultView from './components/ResultView';
 import LoginPage from './components/LoginPage';
 import SignUpPage from './components/SignUpPage';
 import VerifyEmailPage from './components/VerifyEmailPage';
-import { triggerN8NWorkflow, getRedirectUrl, sendVerificationEmail } from './services/n8nService';
+import { triggerN8NWorkflow, sendVerificationEmail } from './services/n8nService';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<AppStatus>(AppStatus.LOGIN);
@@ -20,7 +20,7 @@ const App: React.FC = () => {
 
   const handoffSteps: WorkflowStep[] = [
     { id: '1', label: 'Packaging Payload', status: 'idle' },
-    { id: '2', label: 'Establishing Bridge to N8N', status: 'idle' },
+    { id: '2', label: 'Establishing Secure Cloud Bridge', status: 'idle' },
     { id: '3', label: 'Triggering Webhook Listener', status: 'idle' },
     { id: '4', label: 'Handoff Confirmed', status: 'idle' },
     { id: '5', label: 'Processing at Destination', status: 'idle' }
@@ -34,7 +34,6 @@ const App: React.FC = () => {
   const handleSignUp = async (email: string) => { 
     setUserEmail(email); 
     setStatus(AppStatus.VERIFY_EMAIL);
-    // Trigger real verification email via N8N
     await sendVerificationEmail(email);
   };
 
@@ -69,7 +68,6 @@ const App: React.FC = () => {
     steps[2] = { ...steps[2], status: 'running' };
     setActiveSteps([...steps]);
     
-    // Ensure the payload is sent with the targetEmail from the form
     const result = await triggerN8NWorkflow(config);
     
     if (result.success) {
@@ -89,7 +87,7 @@ const App: React.FC = () => {
       steps[2] = { ...steps[2], status: 'failed' };
       setActiveSteps([...steps]);
       setTimeout(() => {
-        alert(`N8N Workflow Error: ${result.error || "The remote server returned an internal error."}`);
+        alert(`Workflow Error: ${result.error || "The remote server returned an internal error."}`);
         setStatus(AppStatus.IDLE);
       }, 500);
     }
@@ -108,7 +106,7 @@ const App: React.FC = () => {
         if (selectedAgentTypes.some(t => t.includes('EXAIR'))) return 'Social Media Orchestration';
         if (selectedAgentTypes.includes('Email News Letter')) return 'Email Campaign Builder';
         return 'Dashboard';
-      case AppStatus.EXECUTING: return 'N8N Cloud Handoff';
+      case AppStatus.EXECUTING: return 'Secure Cloud Handoff';
       case AppStatus.VIEWING: return 'Generation Result';
       case AppStatus.COMPLETED: return 'Status Report';
       default: return '';
@@ -119,7 +117,7 @@ const App: React.FC = () => {
     if (selectedAgentTypes.includes('Blog Post')) return 'Blog Post Orchestrator';
     if (selectedAgentTypes.some(t => t.includes('EXAIR'))) return 'Social Media Orchestration';
     if (selectedAgentTypes.includes('Email News Letter')) return 'Email Campaign Builder';
-    return 'K&J Cloud Orchestrator';
+    return 'Cloud Orchestrator';
   };
 
   const getMainOrchestrationSubtitle = () => {
@@ -143,11 +141,11 @@ const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="px-2 py-1 text-xs font-bold text-slate-400 uppercase tracking-widest">System Logs</div>
           {history.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 text-sm italic">Logs will appear after N8N callback.</div>
+            <div className="p-8 text-center text-slate-400 text-sm italic">Logs will appear after automation callback.</div>
           ) : (
             history.map((item) => (
               <button key={item.id} onClick={() => handleSelectHistory(item)} className="w-full p-4 rounded-xl text-left hover:bg-slate-50 border-transparent">
-                <div className="text-sm font-bold line-clamp-1">{item.config.topic}</div>
+                <div className="text-sm font-bold line-clamp-1">{item.topic}</div>
                 <div className="text-xs text-slate-500 mt-1">{new Date(item.timestamp).toLocaleDateString()}</div>
               </button>
             ))
@@ -158,7 +156,7 @@ const App: React.FC = () => {
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#0a5cff] to-blue-400 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-slate-900 truncate" title={userEmail}>{userEmail || 'Guest User'}</p>
-              <p className="text-[10px] text-slate-500 uppercase font-medium">Cloud Bridge Active</p>
+              <p className="text-[10px] text-slate-500 uppercase font-medium">Production Bridge Active</p>
             </div>
           </div>
         </div>
@@ -205,14 +203,14 @@ const App: React.FC = () => {
                       </svg>
                     </div>
                  </div>
-                 <h2 className="text-3xl font-black text-slate-900">Synchronizing with N8N Cloud</h2>
-                 <p className="text-slate-500 mt-2 font-medium">Connecting to your KandJTech endpoint...</p>
+                 <h2 className="text-3xl font-black text-slate-900">Synchronizing with Production Engine</h2>
+                 <p className="text-slate-500 mt-2 font-medium">Establishing encrypted cloud tunnel...</p>
                </div>
                <ExecutionTracker steps={activeSteps} />
                <div className="mt-12 p-4 bg-slate-900 rounded-2xl flex items-center justify-between border border-slate-800 shadow-2xl">
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
-                    <span className="text-xs font-mono text-slate-400">ENDPOINT: kandjtech.app.n8n.cloud</span>
+                    <span className="text-xs font-mono text-slate-400 uppercase tracking-widest">BRIDGE: SECURE_CLOUD_TUNNEL_01</span>
                   </div>
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">REST Protocol Secure</span>
                </div>
@@ -230,7 +228,7 @@ const App: React.FC = () => {
                </div>
                <h2 className="text-4xl font-black text-slate-900 mb-4">Task Completed Successfully</h2>
                <p className="text-slate-500 text-lg mb-10 max-w-md mx-auto">
-                 The content orchestration payload has been successfully received by the N8N production engine for <strong>{userEmail}</strong>. 
+                 The content orchestration payload has been successfully received by the production engine for <strong>{userEmail}</strong>. 
                  Your assets are now being generated in the cloud.
                </p>
                

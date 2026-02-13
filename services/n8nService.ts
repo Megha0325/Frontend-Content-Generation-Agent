@@ -2,7 +2,7 @@
 import { WorkflowConfig } from "../types";
 
 /**
- * N8N PRODUCTION & TEST ENDPOINTS
+ * PRODUCTION & TEST ENDPOINTS (HIDDEN FROM UI)
  */
 const N8N_BLOG_WEBHOOK_URL = 'https://kandjtech.app.n8n.cloud/webhook/472e9bac-9aa8-4c02-b037-494ff43262ec';
 const N8N_SOCIAL_WEBHOOK_URL = 'https://kandjtech.app.n8n.cloud/webhook/885b3900-d6f2-4caf-94f9-cd5f90427209';
@@ -12,7 +12,6 @@ const N8N_EXECUTION_VIEW_URL = 'https://kandjtech.app.n8n.cloud/home/workflows';
 
 export async function sendVerificationEmail(email: string): Promise<{ success: boolean }> {
   try {
-    console.log(`Sending verification payload for: ${email}`);
     const response = await fetch(N8N_VERIFICATION_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -90,12 +89,6 @@ export async function triggerN8NWorkflow(config: WorkflowConfig): Promise<{ succ
         formMode: "production"
       }];
     }
-
-    console.group(`FlowForge >> N8N Transmit`);
-    console.log("Endpoint Target:", url);
-    console.log("Recipient Email:", config.targetEmail);
-    console.log("Payload Content:", payload);
-    console.groupEnd();
 
     const response = await fetch(url, {
       method: 'POST',

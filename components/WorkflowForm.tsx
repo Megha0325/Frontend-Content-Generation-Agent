@@ -54,7 +54,7 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
     // Tone: start empty as requested
     setSelectedTones([]);
     
-    // Ensure images are NOT pre-selected as "yes"
+    // Ensure images are NOT pre-selected
     setGenImages(false);
   }, [initialContentTypes, isBlogMode, isEmailMode]);
 
@@ -152,30 +152,34 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
       </div>
 
       <div className="space-y-4 pt-2 border-t border-slate-50">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Image Needed?</label>
-          <label className="inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              className="sr-only peer" 
-              checked={genImages}
-              onChange={() => setGenImages(!genImages)}
-            />
-            <div className="relative w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#0a5cff]/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#0a5cff]"></div>
-          </label>
-        </div>
+        {!isEmailMode && (
+          <>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Image Needed?</label>
+              <label className="inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={genImages}
+                  onChange={() => setGenImages(!genImages)}
+                />
+                <div className="relative w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#0a5cff]/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#0a5cff]"></div>
+              </label>
+            </div>
 
-        {genImages && (
-          <div className="space-y-1 animate-in slide-in-from-top-2 fade-in duration-300">
-            <label className={labelClasses}>Visual Context / Image Prompt</label>
-            <textarea
-              rows={2}
-              className={`${controlClasses} resize-none`}
-              placeholder="e.g. A sleek industrial control room..."
-              value={imageContext}
-              onChange={(e) => setImageContext(e.target.value)}
-            />
-          </div>
+            {genImages && (
+              <div className="space-y-1 animate-in slide-in-from-top-2 fade-in duration-300">
+                <label className={labelClasses}>Visual Context / Image Prompt</label>
+                <textarea
+                  rows={2}
+                  className={`${controlClasses} resize-none`}
+                  placeholder="e.g. A sleek industrial control room..."
+                  value={imageContext}
+                  onChange={(e) => setImageContext(e.target.value)}
+                />
+              </div>
+            )}
+          </>
         )}
 
         <div className="space-y-1 animate-in slide-in-from-top-1 fade-in duration-400">
