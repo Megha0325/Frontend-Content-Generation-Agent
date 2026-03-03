@@ -2,6 +2,29 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { WorkflowConfig, GenerationResult } from "../types";
 
+export async function analyzeReferenceImage(base64Data: string, mimeType: string): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: {
+      parts: [
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: mimeType
+          }
+        },
+        {
+          text: "Analyze this image in detail. Describe its artistic style, lighting, colors, and composition. Focus on technical and aesthetic details that would help recreate the vibe of this image. Keep the description under 150 words."
+        }
+      ]
+    }
+  });
+
+  return response.text || "No analysis available.";
+}
+
 export async function generateWorkflowContent(config: WorkflowConfig): Promise<GenerationResult> {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -13,6 +36,7 @@ export async function generateWorkflowContent(config: WorkflowConfig): Promise<G
     contents: `Generate a detailed set of content for the following platforms: [${contentTypeStr}] about the topic: "${config.topic}". 
     The tone of voice should be a blend of: [${toneStr}]. 
     Context/Style focus: ${config.imageContext}.
+    ${config.referenceImageDescription ? `Reference image style context: ${config.referenceImageDescription}` : ''}
     Provide a cohesive output that works across all these platforms while respecting their individual styles.
     Include a title and structured content body.`,
     config: {
@@ -44,8 +68,8 @@ export async function generateWorkflowContent(config: WorkflowConfig): Promise<G
   if (config.generateImages) {
     try {
       const imagePrompt = config.imageContext 
-        ? `A high-quality professional visual showing: ${config.imageContext}. Specifically related to ${config.topic}. Style: Clean, editorial, corporate.`
-        : `A high-quality editorial cover image for a post about ${config.topic}. Style: Modern, clean, professional.`;
+        ? `A high-quality professional visual showing: ${config.imageContext}. ${config.referenceImageDescription ? `Maintain the style described: ${config.referenceImageDescription}.` : ''} Specifically related to ${config.topic}. Style: Clean, editorial, corporate.`
+        : `A high-quality editorial cover image for a post about ${config.topic}. ${config.referenceImageDescription ? `Maintain the style: ${config.referenceImageDescription}.` : ''} Style: Modern, clean, professional.`;
 
       const imgResponse = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',

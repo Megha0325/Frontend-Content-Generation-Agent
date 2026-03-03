@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { WorkflowConfig, ContentType, Tone } from '../types';
+import { analyzeReferenceImage } from '../services/geminiService';
 
 interface WorkflowFormProps {
   onSubmit: (config: WorkflowConfig) => void;
@@ -16,6 +17,12 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
   const [imageContext, setImageContext] = useState('');
   const [genImages, setGenImages] = useState(false);
   const [targetEmail, setTargetEmail] = useState(userEmail);
+  
+  // New Vision States
+  const [refImageBase64, setRefImageBase64] = useState<string | null>(null);
+  const [visionAnalysis, setVisionAnalysis] = useState<string>('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Define platforms
   const socialPlatforms: ContentType[] = [
@@ -25,7 +32,6 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
     'EXAIR - Twitter'
   ];
 
-  // Detect current mode
   const isBlogMode = useMemo(() => initialContentTypes?.includes('Blog Post'), [initialContentTypes]);
   const isEmailMode = useMemo(() => initialContentTypes?.includes('Email News Letter'), [initialContentTypes]);
   const isSocialMode = useMemo(() => !isBlogMode && !isEmailMode, [isBlogMode, isEmailMode]);
@@ -41,21 +47,17 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
   }, [isBlogMode, isSocialMode]);
 
   useEffect(() => {
-    // Reset or set initial types based on mode
     if (isBlogMode) {
       setSelectedContentTypes(['Blog Post']);
     } else if (isEmailMode) {
       setSelectedContentTypes(['Email News Letter']);
     } else {
-      // Social mode: "let the client select whatever platforms they want" (start empty)
       setSelectedContentTypes([]);
     }
-    
-    // Tone: start empty as requested
     setSelectedTones([]);
-    
-    // Ensure images are NOT pre-selected
     setGenImages(false);
+    setRefImageBase64(null);
+    setVisionAnalysis('');
   }, [initialContentTypes, isBlogMode, isEmailMode]);
 
   useEffect(() => {
@@ -74,6 +76,29 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
     );
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = (reader.result as string).split(',')[1];
+      setRefImageBase64(reader.result as string);
+      setVisionAnalysis(''); // Reset previous analysis
+      setIsAnalyzing(true);
+      try {
+        const analysis = await analyzeReferenceImage(base64String, file.type);
+        setVisionAnalysis(analysis);
+      } catch (err) {
+        console.error("Vision analysis failed", err);
+        setVisionAnalysis("Analysis failed.");
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedContentTypes.length === 0) {
@@ -90,7 +115,8 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
       tone: selectedTones,
       imageContext: genImages ? imageContext : '',
       generateImages: genImages,
-      targetEmail: targetEmail
+      targetEmail: targetEmail,
+      referenceImageDescription: visionAnalysis
     });
   };
 
@@ -168,15 +194,81 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
             </div>
 
             {genImages && (
-              <div className="space-y-1 animate-in slide-in-from-top-2 fade-in duration-300">
-                <label className={labelClasses}>Visual Context / Image Prompt</label>
-                <textarea
-                  rows={2}
-                  className={`${controlClasses} resize-none`}
-                  placeholder="e.g. A sleek industrial control room..."
-                  value={imageContext}
-                  onChange={(e) => setImageContext(e.target.value)}
-                />
+              <div className="space-y-6 animate-in slide-in-from-top-2 fade-in duration-300">
+                <div className="space-y-1">
+                  <label className={labelClasses}>Visual Context / Image Prompt</label>
+                  <textarea
+                    rows={2}
+                    className={`${controlClasses} resize-none`}
+                    placeholder="e.g. A sleek industrial control room..."
+                    value={imageContext}
+                    onChange={(e) => setImageContext(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className={labelClasses}>Reference Image (Optional)</label>
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-6 transition-all cursor-pointer flex flex-col items-center justify-center space-y-2 ${
+                      refImageBase64 ? 'border-[#0a5cff] bg-blue-50/30' : 'border-slate-200 hover:border-[#0a5cff]/50 hover:bg-slate-50'
+                    }`}
+                  >
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleFileChange}
+                    />
+                    {refImageBase64 ? (
+                      <div className="flex items-center space-x-4 w-full">
+                        <img src={refImageBase64} alt="Ref" className="w-16 h-16 rounded-lg object-cover shadow-sm border border-white" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-slate-700">Reference Loaded</p>
+                          <p className="text-[10px] text-slate-500 truncate">Tap to change image</p>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setRefImageBase64(null); setVisionAnalysis(''); }}
+                          className="p-2 text-slate-400 hover:text-red-500"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-xs font-medium text-slate-500">Upload an image for style matching</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Vision Status Indicator */}
+                  <div className="flex items-center justify-start h-6 px-1">
+                    {isAnalyzing && (
+                      <div className="flex items-center space-x-2 animate-in fade-in duration-300">
+                        <svg className="animate-spin h-3.5 w-3.5 text-[#0a5cff]" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Processing Style...</span>
+                      </div>
+                    )}
+                    {visionAnalysis && !isAnalyzing && (
+                      <div className="flex items-center space-x-1.5 text-green-500 animate-in zoom-in duration-300">
+                        <div className="bg-green-100 rounded-full p-0.5">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Style Profile Synced</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </>
@@ -203,21 +295,21 @@ const WorkflowForm: React.FC<WorkflowFormProps> = ({ onSubmit, isLoading, initia
       </div>
 
       <button
-        disabled={isLoading}
+        disabled={isLoading || isAnalyzing}
         type="submit"
         className={`w-full py-4 px-6 rounded-xl text-white font-bold text-lg shadow-lg transition-all ${
-          isLoading 
+          (isLoading || isAnalyzing) 
             ? 'bg-slate-400 cursor-not-allowed' 
             : 'bg-[#0a5cff] hover:bg-[#0048d9] active:scale-[0.98] shadow-[#0a5cff]/20 hover:shadow-[#0a5cff]/30'
         }`}
       >
-        {isLoading ? (
+        {isLoading || isAnalyzing ? (
           <div className="flex items-center justify-center space-x-2">
             <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span>Orchestrating...</span>
+            <span>{isAnalyzing ? 'Vision Analysis...' : 'Orchestrating...'}</span>
           </div>
         ) : 'Execute Content Automation'}
       </button>

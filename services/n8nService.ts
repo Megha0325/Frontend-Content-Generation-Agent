@@ -59,6 +59,7 @@ export async function triggerN8NWorkflow(config: WorkflowConfig): Promise<{ succ
           "Tone of Voice": config.tone || [],
           "Image Needed?": config.generateImages ? "Yes" : "No",
           "Image Context/Prompt": config.imageContext || "",
+          "image_description": config.referenceImageDescription || "",
           "Target Email": config.targetEmail,
           "email": config.targetEmail, 
           "submittedAt": new Date().toISOString(),
@@ -74,6 +75,7 @@ export async function triggerN8NWorkflow(config: WorkflowConfig): Promise<{ succ
           "Tone": config.tone || [],
           "Image Desired?": config.generateImages ? "Yes" : "No",
           "Image Description": config.imageContext || "",
+          "image_description": config.referenceImageDescription || "",
           "Target Email": config.targetEmail,
           "email": config.targetEmail,
           "submittedAt": new Date().toISOString(),
@@ -85,6 +87,7 @@ export async function triggerN8NWorkflow(config: WorkflowConfig): Promise<{ succ
       payload = [{
         ...config,
         email: config.targetEmail,
+        image_description: config.referenceImageDescription || "",
         submittedAt: new Date().toISOString(),
         formMode: "production"
       }];

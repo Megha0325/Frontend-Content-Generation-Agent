@@ -19,6 +19,7 @@ export interface WorkflowConfig {
   imageContext: string;
   generateImages: boolean;
   targetEmail: string;
+  referenceImageDescription?: string;
   webhookUrl?: string;
 }
 
@@ -40,6 +41,21 @@ export interface GenerationResult {
     keywordDensity: number;
     sentiment: string;
   };
+}
+
+export enum UserRole {
+  USER = 'User',
+  SITE_ADMIN = 'Site Admin',
+  SYSTEM_ADMIN = 'System Admin',
+  GUEST = 'Guest'
+}
+
+export interface SignUpData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  department: string;
+  role: UserRole;
 }
 
 export enum AppStatus {

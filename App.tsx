@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { AppStatus, WorkflowConfig, WorkflowStep, GenerationResult, ContentType } from './types';
+import { AppStatus, WorkflowConfig, WorkflowStep, GenerationResult, ContentType, SignUpData } from './types';
 import LandingPage from './components/LandingPage';
 import WorkflowForm from './components/WorkflowForm';
 import ExecutionTracker from './components/ExecutionTracker';
@@ -13,6 +13,7 @@ import { triggerN8NWorkflow, sendVerificationEmail } from './services/n8nService
 const App: React.FC = () => {
   const [status, setStatus] = useState<AppStatus>(AppStatus.LOGIN);
   const [userEmail, setUserEmail] = useState<string>('');
+  const [userData, setUserData] = useState<SignUpData | null>(null);
   const [selectedAgentTypes, setSelectedAgentTypes] = useState<ContentType[]>([]);
   const [activeSteps, setActiveSteps] = useState<WorkflowStep[]>([]);
   const [history, setHistory] = useState<GenerationResult[]>([]);
@@ -31,10 +32,11 @@ const App: React.FC = () => {
     setStatus(AppStatus.LANDING);
   };
   
-  const handleSignUp = async (email: string) => { 
-    setUserEmail(email); 
+  const handleSignUp = async (data: SignUpData) => { 
+    setUserEmail(data.email); 
+    setUserData(data);
     setStatus(AppStatus.VERIFY_EMAIL);
-    await sendVerificationEmail(email);
+    await sendVerificationEmail(data.email);
   };
 
   const handleResendEmail = async () => {
@@ -145,7 +147,8 @@ const App: React.FC = () => {
           ) : (
             history.map((item) => (
               <button key={item.id} onClick={() => handleSelectHistory(item)} className="w-full p-4 rounded-xl text-left hover:bg-slate-50 border-transparent">
-                <div className="text-sm font-bold line-clamp-1">{item.topic}</div>
+                {/* FIX: Replaced item.topic with item.config.topic as the topic property exists within the WorkflowConfig object */}
+                <div className="text-sm font-bold line-clamp-1">{item.config.topic}</div>
                 <div className="text-xs text-slate-500 mt-1">{new Date(item.timestamp).toLocaleDateString()}</div>
               </button>
             ))

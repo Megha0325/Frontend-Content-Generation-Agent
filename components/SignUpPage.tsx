@@ -1,22 +1,26 @@
 
 import React, { useState } from 'react';
+import { SignUpData, UserRole } from '../types';
+import { supabase } from '../services/supabaseClient';
 
 interface SignUpPageProps {
-  onSignUp: (email: string) => void;
+  onSignUp: (data: SignUpData) => void;
   onGoToLogin: () => void;
 }
 
 const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [department, setDepartment] = useState('');
+  const [role, setRole] = useState<UserRole | ''>('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -25,12 +29,60 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
       return;
     }
 
+    if (!role) {
+      setError('Please select a role');
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate registration delay and email dispatch
-    setTimeout(() => {
+
+    try {
+      // 1. Sign up the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error('No user data returned from sign up.');
+      }
+
+      // 2. Save additional profile information to the 'profiles' table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: authData.user.id,
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            department: department,
+            role: role as UserRole,
+          },
+        ]);
+
+      if (profileError) {
+        // If profile creation fails, we might want to notify the user
+        // even if the auth account was created.
+        console.error('Profile creation error:', profileError);
+        throw new Error('Account created, but failed to save profile details. Please contact support.');
+      }
+
+      // 3. Success! Call the parent handler
+      onSignUp({
+        firstName,
+        lastName,
+        email,
+        department,
+        role: role as UserRole
+      });
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred during sign up.');
+    } finally {
       setIsLoading(false);
-      onSignUp(email);
-    }, 1500);
+    }
   };
 
   const EyeIcon = () => (
@@ -69,16 +121,29 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
               </div>
             )}
             
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block ml-1">Full Name</label>
-              <input
-                required
-                type="text"
-                placeholder="John Doe"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block ml-1">First Name</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="John"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block ml-1">Last Name</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Doe"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -91,6 +156,33 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block ml-1">Department</label>
+              <input
+                required
+                type="text"
+                placeholder="Engineering"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block ml-1">Role</label>
+              <select
+                required
+                className={`w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white appearance-none ${!role ? 'text-slate-400' : 'text-slate-800'}`}
+                value={role}
+                onChange={(e) => setRole(e.target.value as UserRole)}
+              >
+                <option value="" disabled className="text-slate-400">Select a role</option>
+                {Object.values(UserRole).map((r) => (
+                  <option key={r} value={r} className="text-slate-800">{r}</option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
@@ -120,19 +212,12 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
                 <div className="relative">
                   <input
                     required
-                    type={showConfirmPassword ? 'text' : 'password'}
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
-                  >
-                    {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
                 </div>
               </div>
             </div>
