@@ -17,6 +17,7 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -64,10 +65,8 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
         ]);
 
       if (profileError) {
-        // If profile creation fails, we might want to notify the user
-        // even if the auth account was created.
         console.error('Profile creation error:', profileError);
-        throw new Error('Account created, but failed to save profile details. Please contact support.');
+        throw new Error(`Account created, but failed to save profile details: ${profileError.message}`);
       }
 
       // 3. Success! Call the parent handler
@@ -212,12 +211,19 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
                 <div className="relative">
                   <input
                     required
-                    type={showPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800"
+                    className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#0a5cff]/50 focus:border-[#0a5cff] transition-all outline-none bg-white text-slate-800"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  >
+                    {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
                 </div>
               </div>
             </div>
@@ -257,6 +263,20 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
           75% { transform: translateX(4px); }
         }
         .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+        
+        /* Hide default browser password reveal button */
+        input::-ms-reveal,
+        input::-ms-clear {
+          display: none;
+        }
+        input::-webkit-contacts-auto-fill-button, 
+        input::-webkit-credentials-auto-fill-button {
+          visibility: hidden;
+          display: none !important;
+          pointer-events: none;
+          position: absolute;
+          right: 0;
+        }
       `}</style>
     </div>
   );

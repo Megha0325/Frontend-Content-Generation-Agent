@@ -113,6 +113,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onGoToSignUp }) => {
           <span className="text-xs font-medium cursor-pointer hover:text-slate-600 transition-colors">Terms of Service</span>
         </div>
       </div>
+      <style>{`
+        /* Hide default browser password reveal button */
+        input::-ms-reveal,
+        input::-ms-clear {
+          display: none;
+        }
+        input::-webkit-contacts-auto-fill-button, 
+        input::-webkit-credentials-auto-fill-button {
+          visibility: hidden;
+          display: none !important;
+          pointer-events: none;
+          position: absolute;
+          right: 0;
+        }
+      `}</style>
     </div>
   );
 };
