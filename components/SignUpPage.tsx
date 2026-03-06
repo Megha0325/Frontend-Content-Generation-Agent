@@ -38,10 +38,18 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
     setIsLoading(true);
 
     try {
-      // 1. Sign up the user with Supabase Auth
+      // 1. Sign up the user with Supabase Auth including metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            department: department,
+            role: role as UserRole,
+          }
+        }
       });
 
       if (authError) throw authError;
@@ -50,12 +58,12 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
         throw new Error('No user data returned from sign up.');
       }
 
-      // 2. Save additional profile information to the 'profiles' table
+      // 2. Explicitly save metadata to the 'profiles' table
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([
           {
-            id: authData.user.id,
+            auth_user_id: authData.user.id, // Linking to the auth user
             first_name: firstName,
             last_name: lastName,
             email: email,
@@ -66,7 +74,7 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onSignUp, onGoToLogin }) => {
 
       if (profileError) {
         console.error('Profile creation error:', profileError);
-        throw new Error(`Account created, but failed to save profile details: ${profileError.message}`);
+        throw new Error(`Account created, but failed to save profile details to 'profiles' table: ${profileError.message}`);
       }
 
       // 3. Success! Call the parent handler
