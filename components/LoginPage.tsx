@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { supabase } from '../services/supabaseClient';
 
 interface LoginPageProps {
   onLogin: (email: string) => void;
@@ -11,15 +12,36 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onGoToSignUp }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate authentication delay
-    setTimeout(() => {
+    setError('');
+
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (data.user && !data.user.email_confirmed_at) {
+        // Sign out immediately if email is not confirmed
+        await supabase.auth.signOut();
+        setError('Please verify your email address before signing in. Check your inbox for the verification link.');
+        setIsLoading(false);
+        return;
+      }
+
+      onLogin(email);
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password');
       setIsLoading(false);
-      onLogin(email); // Pass the email to the login handler
-    }, 1200);
+    }
   };
 
   return (
@@ -39,6 +61,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onGoToSignUp }) => {
 
         <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-xl animate-shake">
+                {error}
+              </div>
+            )}
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block ml-1">Work Email</label>
               <input
@@ -114,6 +141,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onGoToSignUp }) => {
         </div>
       </div>
       <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+
         /* Hide default browser password reveal button */
         input::-ms-reveal,
         input::-ms-clear {

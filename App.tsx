@@ -45,7 +45,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleEmailVerified = () => setStatus(AppStatus.LANDING);
+  const handleEmailVerified = () => setStatus(AppStatus.LOGIN);
 
   const handleSelectAgent = (types: ContentType[]) => {
     setSelectedAgentTypes(types);
